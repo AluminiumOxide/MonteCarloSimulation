@@ -20,7 +20,7 @@ class Arguments:
 
     def init_mcx(self):
         # 这一部分是最开始初始化的()后面在调整位置
-        self.parser.add_argument('--photon_n', type=int, default=5000000, help='photon number set to simulation')
+        self.parser.add_argument('--photon_n', type=int, default=10000, help='photon number set to simulation')
         self.parser.add_argument('--photon_i', type=int, default=0, help='photon index set to simulation')
         self.parser.add_argument('--photon_w', type=float, default=1, help='photon weight set to simulation')
         self.parser.add_argument('--photon_status', type=bool, default=True, help='photon status set to simulation')
@@ -77,7 +77,7 @@ class Arguments:
         v_mua, v_mus, v_g = [], [], []
         for i in range(0, int(infos[21] * 3), 3):
             v_mua.append(properties[i])
-            v_mus.append(properties[i + 1]*0.0001)
+            v_mus.append(properties[i + 1])
             v_g.append(properties[i + 2])
         # print('ua: {}\nus: {}\ng : {}'.format(v_mua, v_mus, v_g))
         self.parser.add_argument('--v_mua', type=list, default=v_mua, help='Optical absorption coefficient')

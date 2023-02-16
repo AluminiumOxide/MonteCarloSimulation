@@ -1,5 +1,5 @@
 import math
-
+import copy
 
 def same_voxel(space_1, space_2, bin_size):
     x1,y1,z1 = space_1  # opt_mcx.pho_pos
@@ -61,7 +61,7 @@ def iteration_sleft(mcx, tis, flag_boundary,with_print=False):
         if with_print:
             print('\tin the same voxel')
 
-        mcx.pho_pos = mcx.hop_pos  # Update positions
+        mcx.pho_pos = copy.deepcopy(mcx.hop_pos)  # Update positions --------------------------------------------------
 
         # Drop photon weight (W) into local bin.
         absorb = mcx.photon_w * (1 - math.exp(-mcx.tis_mua * mcx.hop_step))
