@@ -1,0 +1,6 @@
+.idea/
+float/
+*.mat
+*.docx
+bin_input/*_T.bin
+bin_output/*_F.bin

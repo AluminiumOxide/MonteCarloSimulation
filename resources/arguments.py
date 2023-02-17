@@ -4,45 +4,9 @@ import numpy as np
 import struct
 
 
-def init_light(path_input):  # 静态就不加在类里了
-    path_file = os.path.join(path_input, 'data.txt')
-    lines = []
-    for line in open(path_file, "r", encoding="utf-8"):
-        line = [float(temp) for temp in line.split()]
-        lines.append(line)
-    datas = np.array(lines)
-    return datas
-
-
 class Arguments:
     def __init__(self):
         self.parser = argparse.ArgumentParser()
-
-    def init_mcx(self):
-        # 这一部分是最开始初始化的()后面在调整位置
-        self.parser.add_argument('--photon_n', type=int, default=10000, help='photon number set to simulation')
-        self.parser.add_argument('--photon_i', type=int, default=0, help='photon index set to simulation')
-        self.parser.add_argument('--photon_w', type=float, default=1, help='photon weight set to simulation')
-        self.parser.add_argument('--photon_status', type=bool, default=True, help='photon status set to simulation')
-        # 后面这部分是需要按照mci设置的 pho认为是photon前缀
-        self.parser.add_argument('--pho_pos', type=list, default=[0, 0, 0], help='photon position x y z')
-        self.parser.add_argument('--pho_u', type=list, default=[0, 0, 0], help='photon angle component x y z')
-        self.parser.add_argument('--pho_i', type=list, default=[0, 0, 0], help='photon index component x y z')
-        # 后面这部分是需要按照bin设置的 tis认为是tissue前缀
-        self.parser.add_argument('--tis_mua', type=float, default=0.0, help='tissue optical absorption')
-        self.parser.add_argument('--tis_mus', type=float, default=0.0, help='tissue optical scattering')
-        self.parser.add_argument('--tis_g', type=float, default=0.0, help='tissue Anisotropy parameter')
-        # 后面这部分是运动过程中的flag
-        self.parser.add_argument('--flag_b', type=bool, default=False,
-                                 help='boundary flag True: continue, False: break')
-        # 后面这部分是运动过程中的参数
-        self.parser.add_argument('--hop_sleft', type=float, default=0, help='dimensionless step')
-        self.parser.add_argument('--hop_step', type=float, default=0, help='step size')
-        self.parser.add_argument('--hop_cnt', type=float, default=0, help='count step')
-        self.parser.add_argument('--hop_pos', type=list, default=[0, 0, 0], help='position photon move to')
-
-        args = self.parser.parse_args()
-        return args
 
     def init_mci(self, path_input, prefix, save_prop=False, path_output=None):
         path_file = os.path.join(path_input, prefix + '_H.mci')
@@ -84,6 +48,9 @@ class Arguments:
         self.parser.add_argument('--v_mus', type=list, default=v_mus, help='Optical scattering coefficient')
         self.parser.add_argument('--v_g', type=list, default=v_g, help='Anisotropy parameter')
 
+        # 后面这一部分是添加的其他参数
+        self.parser.add_argument('--photon_number', type=int, default=10000, help='total simulation photon number')
+
         args = self.parser.parse_args()
 
         if save_prop:
@@ -95,24 +62,42 @@ class Arguments:
 
         return args
 
-    def init_probe(self):
-        """
-            position : [x,y, hh]
-            scale : [width,height]
-        """
-        self.parser.add_argument('--probe_1', type=dict,
-                                 default={'position': [-0.6 + 0.0945, -0.1675, 1.22], 'scale': [0.189, 0.355]}, help='')
-        self.parser.add_argument('--probe_2', type=dict,
-                                 default={'position': [0.6 - 0.0945, -0.1675, 1.22], 'scale': [0.189, 0.355]}, help='')
-        self.parser.add_argument('--probe_3', type=dict,
-                                 default={'position': [0, -0.6, 1.22], 'scale': [0.355, 0.189]}, help='')
-        self.parser.add_argument('--probe_4', type=dict,
-                                 default={'position': [0, 0.6 - 0.189, 1.22], 'scale': [0.355, 0.189]}, help='')
 
-        args = self.parser.parse_args()
-        return args
+class Probe:   # position : [x,y,hh]  scale : [width,height]
+    def __init__(self, position, scale):
+        self.position = position
+        self.scale = scale
 
-    def init_tissue(self, opts, path_input, prefix):
+
+class Probes:
+    def __init__(self):
+        self.p_1 = Probe([-0.6 + 0.0945, -0.1675, 1.22], [0.189, 0.355])
+        self.p_2 = Probe([0.6 - 0.0945, -0.1675, 1.22], [0.189, 0.355])
+        self.p_3 = Probe([0, -0.6, 1.22], [0.355, 0.189])
+        self.p_4 = Probe([0, 0.6 - 0.189, 1.22], [0.355, 0.189])
+
+
+class Photon:
+    def __init__(self):
+        self.flag_b = False
+        self.move_cnt = 0
+        self.move_pos = [0, 0, 0]
+        self.move_sleft = 0
+        self.move_step = 0   # 反正是跟着sleft变的，是不是可以删了
+        self.num_index = 0
+        self.pho_index = [0, 0, 0]
+        self.pho_pos = [0, 0, 0]
+        self.pho_radiu = [0, 0, 0]
+        self.pho_status = True
+        self.pho_w = 1
+        self.tis_g = 0.0
+        self.tis_mua = 0.0
+        self.tis_mus = 0.0
+
+
+class Tissue:
+    def __init__(self,opts,path_input,prefix):
+
         path_file = os.path.join(path_input, prefix + '_T.bin')
         bin_size = os.path.getsize(path_file)
         matrix_v = []
@@ -121,7 +106,6 @@ class Arguments:
                 bin_info = file.read(1)
                 bin_info = struct.unpack('B', bin_info)
                 matrix_v.append(bin_info[0])
-
         matrix_v = np.array(matrix_v)
         Nx, Ny, Nz = opts.space_N[0], opts.space_N[1], opts.space_N[2]
         matrix_v = matrix_v.reshape((Nz, Ny, Nx))  # 默认按照reshape计算是反的，因此需要transpose
@@ -129,24 +113,28 @@ class Arguments:
         matrix_f = np.zeros(shape=(Nz, Ny, Nx))
         matrix_r = np.zeros(shape=(Nz, Ny, Nx))
 
-        self.parser.add_argument('--mat_v', default=matrix_v, help='Tissue info with z,y,x')
-        self.parser.add_argument('--mat_f', default=matrix_f,
-                                 help='Luminous flux with z,y,x also called relative fluence rate [W/cm^2/W.delivered]')
-        self.parser.add_argument('--mat_r', default=matrix_r, help='escaping flux [W/cm^2/W.delivered] , not used')
+        self.mat_f=matrix_f
+        self.mat_r=matrix_r
+        self.mat_v=matrix_v
+        self.v_g=opts.v_g
+        self.v_mua=opts.v_mua
+        self.v_mus=opts.v_mus
+        self.vox_N=opts.space_N
+        self.vox_d=opts.space_d
 
-        self.parser.add_argument('--v_mua', type=list, default=opts.v_mua, help='Optical absorption coefficient')
-        self.parser.add_argument('--v_mus', type=list, default=opts.v_mus, help='Optical scattering coefficient')
-        self.parser.add_argument('--v_g', type=list, default=opts.v_g, help='Anisotropy parameter')
 
-        self.parser.add_argument('--vox_d', type=list, default=opts.space_d, help='tissue voxel bins size x y z')
-        self.parser.add_argument('--vox_N', type=list, default=opts.space_N, help='tissue voxel number x y z')
+class Lights:
+    def __init__(self, path_input):
+        path_file = os.path.join(path_input, 'data.txt')
+        lines = []
+        for line in open(path_file, "r", encoding="utf-8"):
+            line = [float(temp) for temp in line.split()]
+            lines.append(line)
+        self.data = np.array(lines)
 
-        args = self.parser.parse_args()
-        return args
 
 
 def save_tissue(path_output, prefix, optical_flux):
-
     save_path = os.path.join(path_output, prefix + '_F.bin')
     # 估计得改
     length = optical_flux.shape[0] * optical_flux.shape[1] * optical_flux.shape[2]
@@ -157,32 +145,3 @@ def save_tissue(path_output, prefix, optical_flux):
     #     data = struct.pack(('%df' % len(list)), *optical_flux)
     #     file.write(data)
 
-
-if __name__ == '__main__':
-    path_input = '../bin_input'
-    path_output = '../bin_output'
-    prefix = 'oppo122'
-    opt_mci = Arguments().init_mci(path_input, prefix, True, path_output)  # 读mci、写prop
-    opt_tissue = Arguments().init_tissue(opt_mci, path_input, prefix)
-
-    print('tissue shape with z,y,x is {}'.format(opt_tissue.mat_v.shape))
-    ix = int(opt_mci.space_N[0] / 2)
-    iy = int(opt_mci.space_N[1] / 2)
-    print('with cut from the center of z {}'.format(opt_tissue.mat_v[:, iy, ix]))
-
-    import matplotlib.pyplot as plt
-    import matplotlib
-
-    matplotlib.use('qt5agg')
-    fig = plt.figure()  # 创建画布
-    ax1, ax2, ax3 = fig.subplots(1, 3)  # 创建图表
-    ax1.imshow(opt_tissue.mat_v[100, :, :])
-    ax1.set_title('xy')
-    ax2.imshow(opt_tissue.mat_v[:, 100, :])
-    ax2.set_title('xz')
-    ax3.imshow(opt_tissue.mat_v[:, :, 100])
-    ax3.set_title('yz')
-    # ax1.axis('off')
-    # ax2.axis('off')
-    # ax3.axis('off')
-    plt.show()

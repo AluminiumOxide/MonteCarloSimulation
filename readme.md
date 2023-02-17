@@ -12,5 +12,11 @@
 
 其中探测器高度，把之前cpp的hh统一放到opt_probe里了
 
-# 我谢谢你！！！argparse！！！
 
+random库:
+random.random()方法用于生成一个0到1的随机浮点数：0<=n<1.0
+random.uniform(a,b)：用于生成一个指定范围内的随机浮点数，两格参数中，其中一个是上限，一个是下限。如果a>b，则生成的随机数n，即b<=n<=a；如果a>b，则a<=n<=b
+random.randint(a,b)：用于生成一个指定范围内的整数。其中参数a是下限，参数b是上限，生成的随机数n：a<=n<=b
+random.randrange
+random.randrange([start],stop[, step])：从指定范围内，按指定基数递增的集合中获取一个随机数。如：random.randrange(10,100,2)，结果相当于从[10,12,14,16,…,96,98]序列中获取一个随机数。random.randrange(10,100,2)在结果上与random.choice(range(10,100,2))等效
+更多相关

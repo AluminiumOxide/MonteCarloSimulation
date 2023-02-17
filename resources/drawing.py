@@ -7,7 +7,7 @@ import scipy.io as io
 def draw_mat_info(opt_tissue):
     mat_flux = opt_tissue.mat_f
     # mat_flux = mat_flux*200
-    io.savemat('./flux.mat', {'flux': mat_flux})
+    io.savemat('./flux_out.mat', {'flux': mat_flux})
     # matplotlib.use('qt5agg')
     # fig = plt.figure()  # 创建画布
     # ax1, ax2, ax3 = fig.subplots(1, 3)  # 创建图表

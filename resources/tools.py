@@ -18,7 +18,7 @@ def scatter_photon(mcx,with_print=False):
     else:
         psi_sin = -math.sqrt(1.0 - psi_cos * psi_cos)
     # New trajectory
-    u_x,u_y,u_z = mcx.pho_u
+    u_x,u_y,u_z = mcx.pho_radiu
     # u_x * u_x + u_y * u_y + u_z * u_z
     if (1 - math.fabs(u_z)) <= 1e-12:
         new_ux = theta_sin * psi_cos
@@ -44,17 +44,17 @@ def scatter_photon(mcx,with_print=False):
         adjust = new_ux*new_ux + new_uy*new_uy + new_uz*new_uz
         if with_print:
             print("调整至当前平方和 {}".format(adjust))
-    mcx.pho_u[0] = new_ux
-    mcx.pho_u[1] = new_uy
-    mcx.pho_u[2] = new_uz
+    mcx.pho_radiu[0] = new_ux
+    mcx.pho_radiu[1] = new_uy
+    mcx.pho_radiu[2] = new_uz
     return mcx
 
 
 def roulette(mcx):
     THRESHOLD, CHANCE = 0.01, 0.1
-    if mcx.photon_w < THRESHOLD:
+    if mcx.pho_w < THRESHOLD:
         if random.random() <= CHANCE:
-            mcx.photon_w /= CHANCE
+            mcx.pho_w /= CHANCE
         else:
-            mcx.photon_status = False
+            mcx.pho_status = False
     return mcx
