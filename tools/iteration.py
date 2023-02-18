@@ -1,6 +1,7 @@
 import math
 import copy
 
+
 def same_voxel(space_1, space_2, bin_size):
     x1,y1,z1 = space_1  # opt_mcx.pho_pos
     x2,y2,z2 = space_2  # opt_mcx.hop_pos
