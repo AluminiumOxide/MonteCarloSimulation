@@ -49,7 +49,7 @@ def draw_photon_plot_3d(opt, info_list, info_weight, plot_type, title_name=''):
     fig = plt.figure()
     ax = plt.axes(projection='3d')
 
-    for i in range(math.floor(opt.photon_number/5)):
+    for i in range(math.floor(opt.photon_number/2)):
         np_list = np.array(info_list[i])
         np_weight = np.array(info_weight[i])
         np_list = np.transpose(np_list)
@@ -93,8 +93,34 @@ def draw_photon_cut(opt,info_list,info_weight,plot_type, title_name=''):
     list_s = []
 
     matplotlib.use('qt5agg')
-    pass
-    plt.figure(dpi=320,figsize=(10,9))  # x 320*10 y 320*9
+    plt.figure(dpi=320,figsize=(20,19))  # x 320*10 y 320*9
+    plt.subplot(2, 2, 2)
+    plt.title(title_name+'_cut_X_vs_Z' ,size=36)
+    plt.xlim([-0.3,0.3])
+    plt.ylim([0.0, 0.6])
+    plt.xlabel('x (cm)',size=36)  # 这个可以不要
+    plt.ylabel('z (cm)' ,size=36)
+    plt.minorticks_on()
+    plt.grid(which='minor')
+    plt.grid(which='major',linewidth =2.5)
+    plt.subplot(2, 2, 3)
+    plt.title(title_name+'_cut_Z_vs_Y' ,size=36)
+    plt.xlim([0.6,0.0])  # 没错,是反的
+    plt.ylim([-0.3,0.3])
+    plt.xlabel('z (cm)' ,size=36)
+    plt.ylabel('y (cm)' ,size=36)
+    plt.minorticks_on()
+    plt.grid(which='minor')
+    plt.grid(which='major',linewidth =2.5)
+    plt.subplot(2, 2, 4)
+    plt.title(title_name+'_cut_X_vs_Y' ,size=36)
+    plt.xlim([-0.3,0.3])
+    plt.ylim([-0.3,0.3])
+    plt.xlabel('x (cm)' ,size=36)
+    plt.ylabel('y (cm)' ,size=36)   # 这个可以不要
+    plt.minorticks_on()
+    plt.grid(which='minor')
+    plt.grid(which='major',linewidth =2.5)
 
     for i in range(math.floor(opt.photon_number/5)):
         np_list = np.array(info_list[i])
@@ -103,7 +129,7 @@ def draw_photon_cut(opt,info_list,info_weight,plot_type, title_name=''):
         np_weight = np.transpose(np_weight)*5
         list_x.append(np_list[0,:])
         list_y.append(np_list[1,:])
-        list_z.append(-np_list[2,:])
+        list_z.append(np_list[2,:])
         list_s.append(np_weight)
 
         list_alpha = list_s
@@ -116,25 +142,35 @@ def draw_photon_cut(opt,info_list,info_weight,plot_type, title_name=''):
 
 
         if plot_type == 'line':
+            plt.subplot(2, 2, 2)
             plt.plot(list_x[i], list_z[i])  # 三维线图没法加权重的，不要想了
+            plt.subplot(2, 2, 3)
+            plt.plot(list_z[i], list_y[i])  # 三维线图没法加权重的，不要想了
+            plt.subplot(2, 2, 4)
+            plt.plot(list_x[i], list_y[i])  # 三维线图没法加权重的，不要想了
+
         elif plot_type == 'scatter':
             # plt.scatter(list_x[i],list_z[i],s=list_y[i],alpha=list_alpha_norm,linewidths=0)
+            plt.subplot(2, 2, 2)
             plt.scatter(list_x[i],list_z[i],s=list_alpha_norm*list_alpha_norm*30,alpha=list_alpha_norm,linewidths=0)
-            # TypeError: alpha must be numeric or None, not <class 'numpy.ndarray'>
+            plt.subplot(2, 2, 3)
+            plt.scatter(list_z[i],list_y[i],s=list_alpha_norm*list_alpha_norm*30,alpha=list_alpha_norm,linewidths=0)
+            plt.subplot(2, 2, 4)
+            plt.scatter(list_x[i],list_y[i],s=list_alpha_norm*list_alpha_norm*30,alpha=list_alpha_norm,linewidths=0)
 
             if list_x[i].shape[0] - 2 >= 0:
                 list_x[i] = list_x[i][:int(list_x[i].shape[0]-2)]
+                list_y[i] = list_y[i][:int(list_y[i].shape[0]-2)]
                 list_z[i] = list_z[i][:int(list_z[i].shape[0]-2)]
+            plt.subplot(2, 2, 2)
             plt.plot(list_x[i], list_z[i],lw=1, alpha=0.1)
-
+            plt.subplot(2, 2, 3)
+            plt.plot(list_z[i], list_y[i], lw=1, alpha=0.1)
+            plt.subplot(2, 2, 4)
+            plt.plot(list_x[i], list_y[i], lw=1, alpha=0.1)
 
         # break
-    plt.title(title_name)
-    # plt.xlim([0,200])
-    # plt.ylim([-200,0])
-    plt.xlabel('x')
-    plt.ylabel('-z')
-    plt.grid()
+
     # plt.show()
     save_path = os.path.join(opt.path_output,'cut_'+plot_type+'_'+title_name+'.png')
     plt.savefig(save_path)

@@ -1,6 +1,8 @@
 .idea/
 float/
+bin_output/
 *.mat
 *.docx
 bin_input/*_T.bin
 bin_output/*_F.bin
+*_cuda.py

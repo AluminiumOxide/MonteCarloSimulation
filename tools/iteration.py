@@ -1,25 +1,47 @@
 import math
 import copy
+import numpy as np
 
 
 def same_voxel(space_1, space_2, bin_size):
-    x1,y1,z1 = space_1  # opt_mcx.pho_pos
-    x2,y2,z2 = space_2  # opt_mcx.hop_pos
-    dx,dy,dz = bin_size  # opt_tis.vox_d,   opt_mci.space_d
+    # 当前位置/dx 相当于恢复到当前精确索引位置
+    # 然后的操作相当于所有的网格的顶点都位于向下取整的位置，这也是为啥÷完dx都floor一下的原因
+    # 然后如果都在网格以内，就应该是在这个网格位置对角，（最大的点）比两个点的位置都大，那就是证明网格没有洞
+    x1,y1,z1 = space_1
+    x2,y2,z2 = space_2
+    dx,dy,dz = bin_size
    # 意义不明
-    min_x = min(math.floor(x1/dx),math.floor(x2/dx)) * dx
-    min_y = min(math.floor(y1/dy),math.floor(y2/dy)) * dy
-    min_z = min(math.floor(z1/dz),math.floor(z2/dz)) * dz
+    min_x = min(math.floor(x1/dx), math.floor(x2/dx)) * dx
+    min_y = min(math.floor(y1/dy), math.floor(y2/dy)) * dy
+    min_z = min(math.floor(z1/dz), math.floor(z2/dz)) * dz
     max_x = min_x + dx
     max_y = min_y + dx
     max_z = min_z + dx
+    sv = x1 <= max_x and x2 <= max_x and \
+         y1 <= max_y and y2 <= max_y and \
+         z1 <= max_z and z2 <= max_z
 
-    sv = x1 <= max_x and x2 <= max_x and y1 <= max_y and y2 <= max_y and z1 <= max_z and z2 <= max_z
+    # space_min = np.floor((space_2 - space_1)/bin_size)
+    # sv2 = np.max(space_min) < 1
+    # if sv != sv2:
+    #     print('出问题了')
 
     return sv
 
 
 def find_voxel_margin(space_1, space_2, bin_size, angle_weight):
+    '''
+    首先和上面一样，[xyz]1/d[xyz] 相当于获得到0~网格数量精确的位置信息
+    那么经过向下取整，i[xyz]就相当于获取到这个位置对应方形网格的索引
+    并且根据当前的角度u[xyz] 可以得到这个索引位置的移动方向，取这个方向的调整位置至于为什么是正方向加反方向不加，这个问题还得问它是向下取整的
+
+    也就是可以理解为，我们能捕获的范围包括索引点为中心（默认是左后上）的三维米字，这样不够，只占了这个网格的三个面
+        为了让检测域填满当前立方体的所有边界面，
+        移动三次，把右前下靠着的索引面给带进去
+        至少现在，按照调整后索引的米字检测范围，经过调整后的 i[xyz]2 可以正好抓到这个网格往这个方向飞的光子
+    '''
+
+
     x1,y1,z1 = space_1  # original position
     x2,y2,z2 = space_2  # new position
     dx,dy,dz = bin_size  # voxel size with cm
@@ -32,102 +54,20 @@ def find_voxel_margin(space_1, space_2, bin_size, angle_weight):
     ix2 = (ix1 + 1) if ux >= 0 else ix1
     iy2 = (iy1 + 1) if uy >= 0 else iy1
     iz2 = (iz1 + 1) if uz >= 0 else iz1
-
+    '''
+        i[xyz]2*d[xyz]相当于恢复到和[xyz]1一样的尺度上索引与位置相减并取绝对值,这里就相当于寻找到这个点到三个面的距离,
+        当然, 还得考虑到角度分量,至于为什么说是除法呢?
+        你可以理解为: 当前坐标向对应面做垂线,前面的计算是这条垂线的长度
+        过当前点 方向为当前移动角度 的 延长线 与对应面相交 
+        我忙除一下就相当于得到这个延长线和的长度,三个面怼的线段还都是一个,最先怼到的面就相当于是最近的面,只需要确保刚出这个网格的长度就完事
+        
+        也是为什么后面取最小的,为了出去就打中,然后加一个很小的数保证能确实出这个网格
+    '''
     xs = math.fabs((ix2*dx - x1) / (ux + 1e-8))
     ys = math.fabs((iy2*dy - y1) / (uy + 1e-8))
     zs = math.fabs((iz2*dz - z1) / (uz + 1e-8))
 
-    s = min(xs,ys,zs)
+    s = min(xs, ys, zs)
 
-    return s + 1e-7
+    return s + 1e-4
 
-
-def iteration_sleft(mcx, tis, flag_boundary, with_print=False):
-
-    mcx.move_step = mcx.move_sleft / (mcx.tis_mus + 1e-12)
-
-    for i in range(3):
-        mcx.move_pos[i] = mcx.pho_pos[i] + mcx.move_step * mcx.pho_radiu[i]
-    # 这里的检测过没过等之后再加
-    if with_print:
-        print('\t <<< begin sleft >>> ------------------------')
-        print('\t --- tis_mus {}'.format(mcx.tis_mus))
-        print('\t --- space1 {}'.format(mcx.pho_pos))
-        print('\t --- space2 {}'.format(mcx.move_pos))
-        print('\t --- move_step {}'.format(mcx.move_step))
-        print('\t --- angle component {}'.format(mcx.pho_radiu))
-
-
-    sv = same_voxel(mcx.pho_pos, mcx.move_pos, tis.vox_d)
-
-    if sv:  # in the same voxel
-        if with_print:
-            print('\tin the same voxel')
-        mcx.pho_pos = copy.deepcopy(mcx.move_pos)
-
-        # Drop photon weight (W) into local bin.
-        absorb = mcx.pho_w * (1 - math.exp(-mcx.tis_mua * mcx.move_step))
-        mcx.pho_w -= absorb  # decrement WEIGHT by amount absorbed
-        # print(absorb)
-        tis.mat_f[mcx.pho_index[2], mcx.pho_index[1], mcx.pho_index[0]] = tis.mat_f[mcx.pho_index[2], mcx.pho_index[1], mcx.pho_index[0]] + absorb
-
-        mcx.move_sleft = 0 # Update sleft
-    # -------------------------------------------------------------------------------------------------------- 2023 02 16
-    else:  # photon has crossed voxel boundary
-        if with_print:
-            print('\tcrossed voxel boundary')
-
-        s = find_voxel_margin(mcx.pho_pos, mcx.move_pos, tis.vox_d, mcx.pho_radiu)
-
-        # Drop photon weight (W) into local bin
-        absorb = mcx.pho_w * (1 - math.exp(-mcx.tis_mua * mcx.move_step))
-        mcx.pho_w -= absorb  # decrement WEIGHT by amount absorbed
-
-        tis.mat_f[mcx.pho_index[2], mcx.pho_index[1], mcx.pho_index[0]] += absorb
-
-        mcx.move_sleft -= s * mcx.tis_mus
-        if mcx.move_sleft <= 1e-7:
-            mcx.move_sleft = 0
-
-        mcx.pho_pos[0] += s * mcx.pho_radiu[0]
-        mcx.pho_pos[1] += s * mcx.pho_radiu[1]
-        mcx.pho_pos[2] += s * mcx.pho_radiu[2]
-
-        mcx.pho_index[0] = int(tis.vox_N[0] / 2 + mcx.pho_pos[0] / tis.vox_d[0])
-        mcx.pho_index[1] = int(tis.vox_N[1] / 2 + mcx.pho_pos[1] / tis.vox_d[1])
-        mcx.pho_index[2] = int(                   mcx.pho_pos[2] / tis.vox_d[2])
-
-        # 这块开始考虑是不是要导入boundary_flag的事,先忽略
-        if flag_boundary == 0:  # Infinite medium.
-            pass
-        elif flag_boundary == 1:  # Escape at boundaries
-            # 超出边缘强制跳出
-            # if mcx.pho_pos[2] < 0.15:  # With repect, Mr.cong
-            #     ss = (mcx.pho_pos[2] - 0.10) / mcx.pho_u[2]
-            for i,(pho_index,vox_N) in enumerate(zip(mcx.pho_index, tis.vox_N)):
-                if pho_index >= vox_N:
-                    mcx.pho_index[i] = tis.vox_N[i] - 1
-                    mcx.pho_status = False
-                    mcx.move_sleft = 0
-                    if with_print:
-                        print('\t\ttorch boundary_1')
-            for i, pho_index in enumerate(mcx.pho_index):
-                if pho_index < 0:
-                    mcx.pho_index[i] = 0
-                    mcx.pho_status = False
-                    mcx.move_sleft = 0
-                    if with_print:
-                        print('\t\ttorch boundary_2')
-        elif flag_boundary == 2:  # Escape at top surface, no x,y bottom z boundaries
-            pass
-        # update pointer to tissue type
-        type = tis.mat_v[mcx.pho_index[2], mcx.pho_index[1], mcx.pho_index[0]]
-        mcx.tis_mua = tis.v_mua[type - 1]
-        mcx.tis_mus = tis.v_mus[type - 1]
-        mcx.tis_g = tis.v_g[type - 1]
-
-    if with_print:
-        print('\t >>> position index {} location {:.4f} {:.4f} {:.4f}'.format(mcx.pho_index,mcx.pho_pos[0], mcx.pho_pos[1], mcx.pho_pos[2]))
-        print('\t >>> photon move count {} with weight {} and step {} '.format(mcx.move_cnt, mcx.pho_w, mcx.move_step))
-        print('\t <<< end sleft >>> ------------------------')
-    return mcx, tis

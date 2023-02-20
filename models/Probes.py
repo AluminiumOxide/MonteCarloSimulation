@@ -1,10 +1,10 @@
-
+import numpy as np
 
 
 class Probe:   # position : [x,y,hh]  scale : [width,height]
     def __init__(self, position, scale):
-        self.position = position
-        self.scale = scale
+        self.position = np.array(position)
+        self.scale = np.array(scale)
 
 
 class Probe_list:

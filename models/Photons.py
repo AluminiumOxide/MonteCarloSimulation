@@ -1,3 +1,4 @@
+
 import numpy as np
 import random
 import math
@@ -5,18 +6,17 @@ from copy import deepcopy
 
 from tools.iteration import same_voxel, find_voxel_margin
 
-
 class Photon:
     def __init__(self):
         self.flag_b = False
         self.move_cnt = 0
-        self.move_pos = [0, 0, 0]
+        self.move_pos = np.array([0.0, 0.0, 0.0])
         self.move_sleft = 0
-        self.move_step = 0  # 反正是跟着sleft变的，是不是可以删了
+
         self.num_index = 0
-        self.pho_index = [0, 0, 0]
-        self.pho_pos = [0, 0, 0]
-        self.pho_radiu = [0, 0, 0]
+        self.pho_index = np.array([0, 0, 0])
+        self.pho_pos = np.array([0.0, 0.0, 0.0])
+        self.pho_radiu = np.array([0, 0, 0])
         self.pho_status = True
         self.pho_w = 1
         self.tis_g = 0.0
@@ -50,6 +50,7 @@ class Photon:
 
                 self.pho_radiu = [theta_sin * psi_cos, theta_sin * psi_sin, theta_cos]
                 self.pho_w = light.data[theta_w][psi_w]
+                # self.pho_w = random.random()
 
         pho_i = []
         pho_i.append(int(opt.space_N[0] / 2 + self.pho_pos[0] / opt.space_d[0]))  # ix
@@ -83,10 +84,9 @@ class Photon:
         """
         每次光子只要没死，就都会重新设置一个随机的移动步长，并且纪录移动次数
         """
-        rnd = 1 - random.random()  # 这样出来是(0, 1]的
+        rnd = 1 - random.random()  # 这样出来是(0, 1]的 这TM有必要吗？在精度面前简直不值一提！草！！！！！大草！！！！！
         self.move_sleft = -math.log(rnd)
         self.move_cnt = self.move_cnt + 1
-
 
     def boundary_treatment(self, flag_boundary, voxel_N):
         if flag_boundary == 0:  # 边界处理 Infinite medium.
@@ -107,19 +107,18 @@ class Photon:
         elif flag_boundary == 2:  # Escape at top surface, no x,y bottom z boundaries
             pass
 
-
     def iteration_sleft(self, tis, flag_boundary, with_print=False):
-        self.move_step = self.move_sleft / (self.tis_mus + 1e-12)
+        move_step = self.move_sleft / (self.tis_mus + 1e-12)  # 是啊!劳资为什么要把临时变量加到obj里!
 
-        for i in range(3):
-            self.move_pos[i] = self.pho_pos[i] + self.move_step * self.pho_radiu[i]
+        self.move_pos = self.pho_pos + self.pho_radiu * np.array(move_step)
+
         # 这里的检测过没过等之后再加
         if with_print:
             print('\t <<< begin sleft >>> ------------------------')
             print('\t --- tis_mus {}'.format(self.tis_mus))
             print('\t --- space1 {}'.format(self.pho_pos))
             print('\t --- space2 {}'.format(self.move_pos))
-            print('\t --- move_step {}'.format(self.move_step))
+            print('\t --- move_step {}'.format(move_step))
             print('\t --- angle component {}'.format(self.pho_radiu))
 
         sv = same_voxel(self.pho_pos, self.move_pos, tis.vox_d)
@@ -131,7 +130,7 @@ class Photon:
             self.pho_pos = deepcopy(self.move_pos)
 
             # Drop photon weight (W) into local bin.
-            absorb = self.pho_w * (1 - math.exp(-self.tis_mua * self.move_step))
+            absorb = self.pho_w * (1 - math.exp(-self.tis_mua * move_step))
             self.pho_w -= absorb  # decrement WEIGHT by amount absorbed
 
             tis.mat_f[self.pho_index[2], self.pho_index[1], self.pho_index[0]] += absorb  # ############################
@@ -142,7 +141,7 @@ class Photon:
             s = find_voxel_margin(self.pho_pos, self.move_pos, tis.vox_d, self.pho_radiu)
 
             # Drop photon weight (W) into local bin
-            absorb = self.pho_w * (1 - math.exp(-self.tis_mua * self.move_step))
+            absorb = self.pho_w * (1 - math.exp(-self.tis_mua * move_step))
             self.pho_w -= absorb
 
             tis.mat_f[self.pho_index[2], self.pho_index[1], self.pho_index[0]] += absorb   # ###########################
@@ -169,7 +168,7 @@ class Photon:
 
         if with_print:
             print('\t >>> position index {} location {:.4f} {:.4f} {:.4f}'.format(self.pho_index,self.pho_pos[0], self.pho_pos[1], self.pho_pos[2]))
-            print('\t >>> photon move count {} with weight {} and step {} '.format(self.move_cnt, self.pho_w, self.move_step))
+            print('\t >>> photon move count {} with weight {} and step {} '.format(self.move_cnt, self.pho_w, move_step))
             print('\t <<< end sleft >>> ------------------------')
 
     def change_direction(self, with_print=False):
@@ -180,6 +179,7 @@ class Photon:
             temp = (1.0 - g * g) / (1.0 - g + 2 * g * random.random())
             theta_cos = (1.0 + g * g - temp * temp) / (2.0 * g)
         theta_sin = math.sqrt(1.0 - theta_cos * theta_cos)
+
         # Sample psi
         psi = 2.0 * math.pi * random.random()
         psi_cos = math.cos(psi)
@@ -187,9 +187,9 @@ class Photon:
             psi_sin = math.sqrt(1.0 - psi_cos * psi_cos)
         else:
             psi_sin = -math.sqrt(1.0 - psi_cos * psi_cos)
-        # New trajectory
-        u_x,u_y,u_z = self.pho_radiu
-        # u_x * u_x + u_y * u_y + u_z * u_z
+
+        # New trajectory  u_x * u_x + u_y * u_y + u_z * u_z == 1
+        u_x, u_y, u_z = self.pho_radiu
         if (1 - math.fabs(u_z)) <= 1e-12:
             new_ux = theta_sin * psi_cos
             new_uy = theta_sin * psi_sin
@@ -198,15 +198,18 @@ class Photon:
             else:
                 new_uz = - theta_cos
         else:
-            temp = math.sqrt(1.0-u_z*u_z)
-            new_ux = theta_sin*(u_x * u_z * psi_cos - u_y * psi_sin) / temp + u_x * theta_cos
-            new_uy = theta_sin*(u_y * u_z * psi_cos - u_x * psi_sin) / temp + u_y * theta_cos
-            new_uz = -theta_sin*psi_cos*temp + u_z*theta_cos
+            temp_2 = math.sqrt(1.0-u_z*u_z)
+            new_ux = theta_sin*(u_x * u_z * psi_cos - u_y * psi_sin) / temp_2 + u_x * theta_cos
+            new_uy = theta_sin*(u_y * u_z * psi_cos + u_x * psi_sin) / temp_2 + u_y * theta_cos   # not same with book
+            new_uz = -theta_sin*psi_cos*temp_2 + u_z*theta_cos
 
+        # My tedious insurance to keep radius, which Biomedical Photonics have print error in 3.12 Wuuu what plastic EN
         adjust = new_ux*new_ux + new_uy*new_uy + new_uz*new_uz
         if math.fabs(adjust-1) > 0.001:
             if with_print:
-                print("原来这里平方和不为1吗？ {}".format(adjust))
+                adjust2 = u_x * u_x + u_y * u_y + u_z * u_z
+                print('原来的平方和 {}'.format(adjust2))
+                print("原来这里平方和不为1吗？ {:.4f} Sz^2 {:.4f}".format(adjust, u_z*u_z))
             adjust_sqrt = math.sqrt(adjust)
             new_ux = new_ux/adjust_sqrt
             new_uy = new_uy/adjust_sqrt

@@ -1,21 +1,39 @@
-必须注意mci里面都是按照 x y z储存
-而tissue 是按照 z y x 储存
-后续一律按照tissue空间索引优先
+# MonteCarloSimulation
 
-其中探测器高度，把之前cpp的hh统一放到opt_probe里了
+This repository build a simple discrete photon statistical model based with transport theory, By using Monte Carlo simulation method with python.
 
-random库:
-random.random()方法用于生成一个0到1的随机浮点数：0<=n<1.0
-random.uniform(a,b)：用于生成一个指定范围内的随机浮点数，两格参数中，其中一个是上限，一个是下限。如果a>b，则生成的随机数n，即b<=n<=a；如果a>b，则a<=n<=b
-random.randint(a,b)：用于生成一个指定范围内的整数。其中参数a是下限，参数b是上限，生成的随机数n：a<=n<=b
-random.randrange
-random.randrange([start],stop[, step])：从指定范围内，按指定基数递增的集合中获取一个随机数。如：random.randrange(10,100,2)，结果相当于从[10,12,14,16,…,96,98]序列中获取一个随机数。random.randrange(10,100,2)在结果上与random.choice(range(10,100,2))等效
-更多相关
+Similar with other Monte Carlo Method explained  in Biomedical Photonics , our method basically consistent with the model assumptions of the textbook
 
-## 2023/02/17
+Since this repository currently in beta, only build a proto example and you can get more info in our [params-card](./docs/params.md)
 
-暂时算是完成了模拟的基本流程，deepcopy直接占了10%时间，先把对象里储存的东西都看成是numpy数组吧，floor也很耗时
+For the reason that python is an interpreted language, and running speed is too slow compared to compiled language. If we have time left in the following works, we will consider providing a gpu version of the program.
 
-## 2023/02/17
+## Install
 
-调出来了光子运动位置的图，看起来还行，然后就是如果拿二维表示的话，散点图，横纵xz，深度y，拿点的透明度代表深度，用大小代表weight是不是也可以？
+This project build with origin python, you only need to install numpy、scipy、matplotlib now, or you can create a conda env and run following code:
+
+```
+conda create -n MCS python=3.8
+conda activate MCS
+pip install -r requirements.txt
+```
+
+## Simulation
+
+After clone and config environment you can directly run following code to begin simulation.
+
+```
+python main.py --photon_number [your photon number]
+```
+
+Dont forget prepare `<\prefix\>_H.mci`、`<\prefix\>_T.bin` and `data.txt` at input file path.
+
+```mermaid
+graph LR
+a1(<\prefix\>_H.mci)--control info-->b(MCS)--control info for matlab-->c1(<\prefix\>_prop.m)
+a2(data.txt)--light info-->b
+a3(<\prefix\>_T.bin)--Tissue info-->b--Tissue light flux-->c2(<\prefix\>_F.bin)
+b-->c3(plots)
+```
+
+enjoy
