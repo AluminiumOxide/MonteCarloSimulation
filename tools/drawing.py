@@ -48,8 +48,9 @@ def draw_photon_plot_3d(opt, info_list, info_weight, plot_type, title_name=''):
     list_s = []
     fig = plt.figure()
     ax = plt.axes(projection='3d')
-
-    for i in range(math.floor(opt.photon_number/2)):
+    # received_number = math.floor(opt.photon_number/2)  # 原来的
+    received_number = len(info_list)
+    for i in range(received_number):
         np_list = np.array(info_list[i])
         np_weight = np.array(info_weight[i])
         np_list = np.transpose(np_list)
@@ -122,7 +123,9 @@ def draw_photon_cut(opt,info_list,info_weight,plot_type, title_name=''):
     plt.grid(which='minor')
     plt.grid(which='major',linewidth =2.5)
 
-    for i in range(math.floor(opt.photon_number/5)):
+    # received_number = math.floor(opt.photon_number/2)
+    received_number = len(info_list)
+    for i in range(received_number):
         np_list = np.array(info_list[i])
         np_weight = np.array(info_weight[i])
         np_list = np.transpose(np_list)
