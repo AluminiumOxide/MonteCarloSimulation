@@ -1,6 +1,6 @@
-clc
-clear
-load("./bin_output/oppo112_F.mat");
+% clc
+% clear
+% load("./bin_output/oppo112_F.mat");
 % flux = flux / (0.003 * 0.003 * 0.003 *10000);
 % flux_min = floor(min(min(min(flux))))
 flux_max = round(max(max(max(flux))))

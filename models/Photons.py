@@ -210,8 +210,8 @@ class Photon:
         if math.fabs(adjust-1) > 0.001:
             if with_print:
                 adjust2 = u_x * u_x + u_y * u_y + u_z * u_z
-                print('原来的平方和 {}'.format(adjust2))
-                print("原来这里平方和不为1吗？ {:.4f} Sz^2 {:.4f}".format(adjust, u_z*u_z))
+                print('Org squares sum{}'.format(adjust2))
+                print("Squares sum not equal with 1 {:.4f} Sz^2 {:.4f}".format(adjust, u_z*u_z))
             adjust_sqrt = math.sqrt(adjust)
             new_ux = new_ux/adjust_sqrt
             new_uy = new_uy/adjust_sqrt

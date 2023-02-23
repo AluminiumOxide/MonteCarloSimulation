@@ -6,7 +6,7 @@ import os
 import math
 
 
-def draw_mat_info(opt, tissue, photon_number):
+def draw_mat_info(opt, tissue, photon_number, use_log=False):
     temp = tissue.vox_d[0] * tissue.vox_d[1] * tissue.vox_d[2] * photon_number
     flux_to_bin = tissue.mat_f / temp
     # 先转换成bin那种
@@ -16,12 +16,15 @@ def draw_mat_info(opt, tissue, photon_number):
     flux_to_bin = flux_to_bin.astype(np.float32)
     flux_to_bin.tofile(save_path)
     #
-    mat_flux = np.log(tissue.mat_f+1e-8)
-    save_path = os.path.join(opt.path_output, opt.prefix + '_F.mat')
-    io.savemat(save_path, {'flux': mat_flux})
+    mat_flux = tissue.mat_f
+    if use_log:
+        mat_flux = np.log(tissue.mat_f+1e-8)
+    else:
+        save_path = os.path.join(opt.path_output, opt.prefix + '_F.mat')
+        io.savemat(save_path, {'flux': mat_flux})
 
     matplotlib.use('qt5agg')
-    fig = plt.figure()
+    fig = plt.figure(dpi=320,figsize=(12,5))
     ax1, ax2, ax3 = fig.subplots(1, 3)
     ax1.imshow(mat_flux[100, :, :])
     # ax1.imshow(np.argmax(mat_flux,axis=0))
@@ -32,10 +35,13 @@ def draw_mat_info(opt, tissue, photon_number):
     ax3.imshow(mat_flux[:, :, 100])
     # ax3.imshow(np.argmax(mat_flux, axis=2))
     ax3.set_title('yz')
-    # ax1.axis('off')
-    # ax2.axis('off')
-    # ax3.axis('off')
+    ax1.axis('off')
+    ax2.axis('off')
+    ax3.axis('off')
+    # fig.colorbar(mappable=None)
     save_path = os.path.join(opt.path_output, opt.prefix + '_F.png')
+    if use_log:
+        save_path = os.path.join(opt.path_output, opt.prefix + '_log_F.png')
     fig.savefig(save_path)
     plt.close()
     # plt.show()
@@ -46,7 +52,7 @@ def draw_photon_plot_3d(opt, info_list, info_weight, plot_type, title_name=''):
     list_y = []
     list_z = []
     list_s = []
-    fig = plt.figure()
+    fig = plt.figure(dpi=320,figsize=(5,5))
     ax = plt.axes(projection='3d')
     # received_number = math.floor(opt.photon_number/2)  # 原来的
     received_number = len(info_list)
