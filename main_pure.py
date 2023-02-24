@@ -2,7 +2,7 @@ from models import *
 from tools.drawing import draw_mat_info, draw_photon_plot_3d, draw_photon_cut
 
 from copy import deepcopy
-
+# 这个是没有中间检察光子路径的版本，有什么气可以来这撒
 
 def simulation(opt, photon, probe, light, tissue, with_print=False):
     d_total_pho_list, d_total_idx_list, d_total_weight = [], [], []
@@ -23,7 +23,6 @@ def simulation(opt, photon, probe, light, tissue, with_print=False):
             photon.set_step()  # 运动长度
             while photon.move_sleft > 0:  # 迭代一次光子移动的sleft 按照一个方向走到死
                 # 理论上在这, 但是可能会出问题？
-                #
                 photon.iteration_sleft(tissue, opt.flag_boundary)
 
             d_float = deepcopy(photon.pho_index)

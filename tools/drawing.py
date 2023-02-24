@@ -167,10 +167,10 @@ def draw_photon_cut(opt,info_list,info_weight,plot_type, title_name=''):
             plt.subplot(2, 2, 4)
             plt.scatter(list_x[i],list_y[i],s=list_alpha_norm*list_alpha_norm*30,alpha=list_alpha_norm,linewidths=0)
 
-            if list_x[i].shape[0] - 2 >= 0:
-                list_x[i] = list_x[i][:int(list_x[i].shape[0]-2)]
-                list_y[i] = list_y[i][:int(list_y[i].shape[0]-2)]
-                list_z[i] = list_z[i][:int(list_z[i].shape[0]-2)]
+            # if list_x[i].shape[0] - 2 >= 0:
+            #     list_x[i] = list_x[i][:int(list_x[i].shape[0]-2)]
+            #     list_y[i] = list_y[i][:int(list_y[i].shape[0]-2)]
+            #     list_z[i] = list_z[i][:int(list_z[i].shape[0]-2)]
             plt.subplot(2, 2, 2)
             plt.plot(list_x[i], list_z[i],lw=1, alpha=0.1)
             plt.subplot(2, 2, 3)
