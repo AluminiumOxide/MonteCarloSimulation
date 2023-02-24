@@ -23,7 +23,7 @@ class Argument:
 
     def init_mci(self):
         # 前这一部分是控制训练的参数
-        self.parser.add_argument('--photon_number', type=int, default=100000, help='total simulation photon number')
+        self.parser.add_argument('--photon_number', type=int, default=500, help='total simulation photon number')
         self.parser.add_argument('--path_input', type=str, default='./bin_input')
         self.parser.add_argument('--path_output', type=str, default='./bin_output')
         self.parser.add_argument('--prefix', type=str, default='oppo122')

@@ -64,7 +64,7 @@ class Photon:
 
         self.pho_index = pho_i
 
-    def set_tissue(self, tissue):
+    def set_tissue(self, tissue, with_buffer=False):
         """
         根据光子的当前位置，更新当前位置组织的光学信息 photon update tissue optical info
         """
@@ -73,8 +73,9 @@ class Photon:
         self.tis_mua = tissue.v_mua[type - 1]  # 应该是需要-1的?
         self.tis_mus = tissue.v_mus[type - 1]
         self.tis_g = tissue.v_g[type - 1]
-        # 为了检测光子是否进入探测器位置,view()用来避免浅复制
-        tissue.mat_r = tissue.mat_f.view()   # tissue.mat_f.view()  deepcopy(tissue.mat_f)
+        if with_buffer:
+            # 为了检测光子是否进入探测器位置,view()用来避免浅复制
+            tissue.mat_r = tissue.mat_f.view()   # tissue.mat_f.view()  deepcopy(tissue.mat_f)
 
     def set_others(self):
         # 重置光子其他信息 未接触边界 光子存活 重置光子移动
