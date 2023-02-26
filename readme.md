@@ -20,7 +20,13 @@ pip install -r requirements.txt
 
 ## Simulation
 
-After clone and config environment you can directly run following code to begin simulation.
+After clone and config environment you need to run following script to generate `[perfix]_T.bin` in the directory of `./bin_input/`.
+
+```
+python build_0_tissue_bin.py
+```
+
+Then you can directly run following code to begin simulation.
 
 ```
 python [file].py --photon_number [your photon number]
@@ -28,7 +34,7 @@ python [file].py --photon_number [your photon number]
 
 You can get more [file] info in the following notes.
 
-Don't forget prepare `<\prefix\>_H.mci`、`<\prefix\>_T.bin` and `data.txt` at input file path.
+Don't forget prepare `<\prefix\>_H.mci` and `data.txt` at input file path.
 
 ```mermaid
 graph LR
